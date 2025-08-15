@@ -1,4 +1,4 @@
-// Enhanced AI Prompt Forwarder with Context-Rich Templates
+// Enhanced AI Prompt Forwarder with Plain-Text Responses
 const fetch = require('node-fetch');
 
 // Use a secure environment variable for your API key
@@ -6,62 +6,58 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_KEY;
 const SITE_URL = process.env.SITE_URL || 'https://promptforge.dev';
 const SITE_NAME = 'PromptForge AI Assistant';
 
-// Centralized, context-rich prompt templates for maximum value
+// Centralized, context-rich prompt templates
 const toolPrompts = {
   'explain-code': (code) => `
-You are an expert software engineer and technical writer. Provide a comprehensive, step-by-step explanation of the following code snippet. Cover:
+You are an expert software engineer and technical writer. Provide a comprehensive, step-by-step explanation of the following code snippet in plain text only. Do not use Markdown, headings, or code blocks. Cover:
 
-1. **Overall Purpose**: What problem does it solve?
-2. **Key Components**: Describe each function, variable, and control flow.
-3. **Behavior**: How data moves through the code.
-4. **Edge Cases & Improvements**: Potential pitfalls and suggestions for optimization.
+1. Overall Purpose: What problem does it solve?
+2. Key Components: Describe each function, variable, and control flow.
+3. Behavior: How data moves through the code.
+4. Edge Cases & Improvements: Potential pitfalls and suggestions for optimization.
 
-\`\`\`javascript
+Code:
 ${code}
-\`\`\`
-
-Be concise but thorough, using bullet points and code examples where helpful.`,
+  `,
 
   'fix-bug': (code) => `
-You are a seasoned developer and code review expert. Analyze the following JavaScript code, identify any bugs, logical errors, or poor practices, and provide:
+You are a seasoned developer and code review expert. Analyze the following JavaScript code in plain text only (no Markdown, no code blocks). Identify any bugs, logical errors, or poor practices, and provide:
 
-1. **List of Issues**: Numbered list explaining each defect or anti-pattern.
-2. **Corrected Code**: A clean, refactored version with comments.
-3. **Rationale**: Brief explanation of why each change improves the code.
+1. List of Issues: Numbered list explaining each defect or anti-pattern.
+2. Corrected Code: A clean, refactored version with comments.
+3. Rationale: Brief explanation of why each change improves the code.
 
 Original Code:
-\`\`\`javascript
 ${code}
-\`\`\`
-
-Please ensure the fixed version maintains original functionality but follows best practices and robust error handling.`,
+  `,
 
   'generate-regex': (prompt) => `
-You are a regex architect and educator. Craft a regular expression to satisfy the following requirements:
+You are a regex architect and educator. Craft a regular expression to satisfy the following requirements in plain text only (no Markdown, no code blocks). Include:
 
-1. **Pattern Description**: A human-readable summary of what it matches.
-2. **Regex Pattern**: The final expression enclosed in \`/…/\` or as a string literal.
-3. **Component Breakdown**: Explain each part of the pattern.
-4. **Test Examples**: Provide at least three examples that match and three that do not.
+1. Pattern Description: Human-readable summary of what it matches.
+2. Regex Pattern: The final expression.
+3. Component Breakdown: Explain each part of the pattern.
+4. Test Examples: At least three examples that match and three that do not.
 
 Requirement:
 ${prompt}
-
-Ensure the regex is efficient and compatible with JavaScript.`,
+  `,
 };
 
-// Process prompts using DeepSeek AI or fallback to mock
+// Strip any leftover Markdown characters (safety fallback)
+function stripMarkdown(text) {
+  return text.replace(/[`*_#]/g, '').replace(/\n{2,}/g, '\n').trim();
+}
+
+// Process prompts via OpenRouter API
 async function processPrompt(toolId, prompt) {
-  console.log('Processing prompt:', OPENROUTER_API_KEY);
   if (!OPENROUTER_API_KEY) {
     console.warn('API key not set — using mock response');
     return getMockResponse(toolId, prompt);
   }
 
   const content = toolPrompts[toolId]?.(prompt);
-  if (!content) {
-    throw new Error(`Unknown toolId: ${toolId}`);
-  }
+  if (!content) throw new Error(`Unknown toolId: ${toolId}`);
 
   try {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -80,15 +76,11 @@ async function processPrompt(toolId, prompt) {
         ]
       })
     });
-    if (!response.ok)
-      throw new Error(`API request failed with status ${response.status}`);
-    else if (response.status === 429)
-      throw new Error('Rate limit exceeded. Please try again later.');
-    else if (response.status === 500)
-      throw new Error('Internal server error. Please try again later.');
+
+    if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
     const data = await response.json();
-    console.log('AI response:', data);
-    return data.choices?.[0]?.message?.content || 'No response content';
+    const rawText = data.choices?.[0]?.message?.content || 'No response content';
+    return stripMarkdown(rawText); // Ensure plain text output
   } catch (error) {
     console.error('Error calling AI API:', error);
     return getMockResponse(toolId, prompt);
@@ -100,6 +92,4 @@ function getMockResponse(toolId, prompt) {
   return 'Mock response: AI service unavailable. Please provide a valid API key to get real results.';
 }
 
-module.exports = {
-  processPrompt
-};
+module.exports = { processPrompt };
