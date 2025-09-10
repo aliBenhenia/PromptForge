@@ -70,9 +70,9 @@ export default function DashboardPage() {
   };
   
   // Format date for recent requests
-  const formatDateTime = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { 
+  const formatDateTime = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('en-US', { 
       month: 'short', 
       day: 'numeric',
       hour: '2-digit',
@@ -376,7 +376,7 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex items-center space-x-4">
                         <span className="text-sm text-muted-foreground hidden sm:block">
-                          {formatDateTime(request.timestamp)}
+                          {request.createdAt ? formatDateTime(request.createdAt) : 'N/A'}
                         </span>
                         <div className="flex items-center">
                           {request.status === 'completed' ? (
