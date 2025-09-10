@@ -1,4 +1,4 @@
-
+"use client";
 
 // ```jsx
 import { useState, useEffect } from 'react';
