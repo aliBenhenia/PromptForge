@@ -13,6 +13,8 @@ import { statsService, UsageStats } from '@/services/stats-service';
 import { toolService } from '@/services/tool-service';
 import { PromptRequest, Tool } from '@/types/tool';
 import { RequestHistory } from '@/components/RequestHistory';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { motion } from 'framer-motion';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -83,211 +85,271 @@ export default function DashboardPage() {
   }
   
   return (
-    <div>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-8"
+    >
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex flex-col md:flex-row justify-between items-start md:items-center"
+      >
         <div>
           <h1 className="text-3xl font-bold">Welcome back, {user?.name}</h1>
           <p className="text-muted-foreground mt-1">
             Here's an overview of your AI assistant usage and recent activity.
           </p>
         </div>
-        <div className="mt-4 md:mt-0">
+        <motion.div 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="mt-4 md:mt-0"
+        >
           <Link href="/tools">
             <Button>
               <Zap className="mr-2 h-4 w-4" />
               Use Tools
             </Button>
           </Link>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
       
       {/* Usage Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Usage
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{usageStats?.totalRequests || 0}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              All-time prompts
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Today's Usage
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{usageStats?.requestsToday || 0}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Prompts today
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Remaining Requests
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {usageStats ? (usageStats.requestLimit - usageStats.totalRequests) : 0}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Out of {usageStats?.requestLimit || 1000}
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Quota Usage
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {usageStats ? Math.round((usageStats.totalRequests / usageStats.requestLimit) * 100) : 0}%
-            </div>
-            <div className="mt-2">
-             <Progress 
-  value={
-    usageStats && 
-    typeof usageStats.totalRequests === 'number' &&
-    typeof usageStats.requestLimit === 'number' &&
-    usageStats.requestLimit > 0
-      ? (usageStats.totalRequests / usageStats.requestLimit) * 100
-      : 0
-  }
-  className="h-2"
-/>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+      >
+        {[
+          { 
+            title: "Total Usage", 
+            value: usageStats?.totalRequests || 0, 
+            subtitle: "All-time prompts",
+            icon: <Zap className="h-4 w-4" />
+          },
+          { 
+            title: "Today's Usage", 
+            value: usageStats?.requestsToday || 0, 
+            subtitle: "Prompts today",
+            icon: <Clock className="h-4 w-4" />
+          },
+          { 
+            title: "Remaining Requests", 
+            value: usageStats ? (usageStats.requestLimit - usageStats.totalRequests) : 0, 
+            subtitle: `Out of ${usageStats?.requestLimit || 1000}`,
+            icon: <Lightbulb className="h-4 w-4" />
+          },
+          { 
+            title: "Quota Usage", 
+            value: `${usageStats ? Math.round((usageStats.totalRequests / usageStats.requestLimit) * 100) : 0}%`,
+            subtitle: "Usage percentage",
+            icon: <Code className="h-4 w-4" />
+          }
+        ].map((stat, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 * index }}
+            whileHover={{ y: -5 }}
+          >
+            <Card className="hover:shadow-md transition-shadow h-full">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  {stat.icon}
+                  {stat.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-primary">{stat.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {stat.subtitle}
+                </p>
+                {stat.title === "Quota Usage" && usageStats && (
+                  <div className="mt-3">
+                    <Progress 
+                      value={
+                        usageStats && 
+                        typeof usageStats.totalRequests === 'number' &&
+                        typeof usageStats.requestLimit === 'number' &&
+                        usageStats.requestLimit > 0
+                          ? (usageStats.totalRequests / usageStats.requestLimit) * 100
+                          : 0
+                      }
+                      className="h-2"
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </motion.div>
       
       {/* Tabs for chart and tools */}
-      <Tabs defaultValue="usage" className="mb-8">
-        <TabsList>
-          <TabsTrigger value="usage">Usage Statistics</TabsTrigger>
-          <TabsTrigger value="tools">Available Tools</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="usage" className="pt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Usage Over Time</CardTitle>
-              <CardDescription>
-                Your prompt requests over the last 7 days
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                {usageStats?.dailyUsage && (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart
-                      data={usageStats.dailyUsage}
-                      margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                    >
-                      <defs>
-                        <linearGradient id="colorPv" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8} />
-                          <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <XAxis 
-                        dataKey="date"
-                        tickFormatter={formatDate}
-                        tickLine={false}
-                        axisLine={false}
-                        style={{ fontSize: '12px' }}
-                      />
-                      <YAxis 
-                        tickLine={false}
-                        axisLine={false}
-                        style={{ fontSize: '12px' }}
-                      />
-                      <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.2} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Area
-                        type="monotone"
-                        dataKey="count"
-                        stroke="hsl(var(--chart-1))"
-                        fillOpacity={1}
-                        fill="url(#colorPv)"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="tools" className="pt-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {tools.map((tool) => (
-              <Card key={tool.id} className="overflow-hidden group">
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center">
-                      <div className="p-2 rounded-md bg-primary/10 mr-3">
-                        {tool.icon === 'code' && <Code className="h-5 w-5 text-primary" />}
-                        {tool.icon === 'bug' && <Zap className="h-5 w-5 text-primary" />}
-                        {tool.icon === 'code-2' && <Lightbulb className="h-5 w-5 text-primary" />}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.3 }}
+      >
+        <Tabs defaultValue="usage" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="usage" className="flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              Usage Statistics
+            </TabsTrigger>
+            <TabsTrigger value="tools" className="flex items-center gap-2">
+              <Code className="h-4 w-4" />
+              Available Tools
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="usage" className="pt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="h-5 w-5" />
+                  Usage Over Time
+                </CardTitle>
+                <CardDescription>
+                  Your prompt requests over the last 7 days
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  {usageStats?.dailyUsage && (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart
+                        data={usageStats.dailyUsage}
+                        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                      >
+                        <defs>
+                          <linearGradient id="colorPv" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
+                          </linearGradient>
+                        </defs>
+                        <XAxis 
+                          dataKey="date"
+                          tickFormatter={formatDate}
+                          tickLine={false}
+                          axisLine={false}
+                          style={{ fontSize: '12px' }}
+                        />
+                        <YAxis 
+                          tickLine={false}
+                          axisLine={false}
+                          style={{ fontSize: '12px' }}
+                        />
+                        <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.2} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Area
+                          type="monotone"
+                          dataKey="count"
+                          stroke="hsl(var(--primary))"
+                          strokeWidth={2}
+                          fillOpacity={1}
+                          fill="url(#colorPv)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="tools" className="pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {tools.map((tool, index) => (
+                <motion.div
+                  key={tool.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.1 * index }}
+                  whileHover={{ y: -5 }}
+                >
+                  <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 h-full">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center">
+                          <div className="p-2 rounded-md bg-primary/10 mr-3">
+                            {tool.icon === 'code' && <Code className="h-5 w-5 text-primary" />}
+                            {tool.icon === 'bug' && <Zap className="h-5 w-5 text-primary" />}
+                            {tool.icon === 'code-2' && <Lightbulb className="h-5 w-5 text-primary" />}
+                          </div>
+                          <CardTitle className="text-lg">{tool.name}</CardTitle>
+                        </div>
                       </div>
-                      <CardTitle>{tool.name}</CardTitle>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="min-h-[40px]">{tool.description}</CardDescription>
-                  <Link href={`/tools?tool=${tool.id}`} className="mt-4 inline-block">
-                    <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                      Use Tool
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription className="min-h-[60px] text-sm">{tool.description}</CardDescription>
+                      <Link href={`/tools?tool=${tool.id}`} className="mt-4 inline-block w-full">
+                        <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                          Use Tool
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </motion.div>
       
       {/* Recent Requests */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>Your most recent prompt requests</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {recentRequests.length > 0 ? (
-            <div className="space-y-6">
-              {/* Display each request */}
-              <RequestHistory recentRequests={recentRequests} 
-                getToolNameById={getToolNameById} 
-                // setSelected={() => {}} // Placeholder for request selection
-              />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.4 }}
+      >
+        <Card className="shadow-sm">
+          <CardHeader className="border-b">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Recent Activity
+                </CardTitle>
+                <CardDescription>Your most recent prompt requests</CardDescription>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {recentRequests.length} requests
+              </div>
             </div>
-          ) : (
-            <div className="text-center py-6">
-              <p className="text-muted-foreground">No recent requests found</p>
-              <Link href="/tools" className="mt-4 inline-block">
-                <Button variant="outline">Try a Tool Now</Button>
-              </Link>
-            </div>
-          )}
-          
-        </CardContent>
-      </Card>
-    </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {recentRequests.length > 0 ? (
+              <ScrollArea className="h-[400px] p-6">
+                <div className="space-y-4 pr-2">
+                  <RequestHistory 
+                    recentRequests={recentRequests} 
+                    getToolNameById={getToolNameById} 
+                  />
+                </div>
+              </ScrollArea>
+            ) : (
+              <div className="text-center py-12">
+                <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                  <Clock className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground mb-6">No recent requests found</p>
+                <Link href="/tools" className="inline-block">
+                  <Button variant="default">
+                    <Zap className="mr-2 h-4 w-4" />
+                    Try a Tool Now
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 }
