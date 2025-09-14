@@ -238,7 +238,7 @@ export default function ToolsPage() {
                         </CardDescription>
                         <div className="flex items-center mt-2">
                           <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                          <span className="text-xs font-medium text-muted-foreground ml-1">{tool.rating || '4.8'}</span>
+                          <span className="text-xs font-medium text-muted-foreground ml-1">4.8</span>
                         </div>
                       </div>
                     </CardHeader>
