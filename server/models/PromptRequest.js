@@ -9,7 +9,20 @@ const PromptRequestSchema = new mongoose.Schema({
   toolId: {
     type: String,
     required: true,
-    enum: ['explain-code', 'fix-bug', 'generate-regex'],
+enum: [
+      'explain-code',
+      'fix-bug',
+      'generate-regex',
+      'refactor-code',
+      'generate-docs',
+      'code-review',
+      'generate-unit-tests',
+      'optimize-performance',
+      'convert-language',
+      'design-patterns',
+      'security-audit',
+      'database-query'
+    ],
   },
   prompt: {
     type: String,
