@@ -112,7 +112,7 @@ export default function ToolsPage() {
       toast({ title: 'Success', description: 'Response received.' });
     } catch (err) {
       clearInterval(interval);
-      toast({ variant: 'destructive', title: 'Error', description: 'Prompt failed.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'messageYou have reached your daily request limit' });
     } finally {
       setIsSubmitting(false);
       setTimeout(() => setProgress(0), 500);
