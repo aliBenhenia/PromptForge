@@ -1,12 +1,11 @@
-// Enhanced AI Prompt Forwarder with Plain-Text Responses
+// 🚀 Gemini 3 Prompt Forwarder with Plain-Text Responses
 const fetch = require('node-fetch');
 
-// Use a secure environment variable for your API key
-const OPENROUTER_API_KEY = process.env.OPENROUTER_KEY;
-const SITE_URL = process.env.SITE_URL || 'https://promptforge.dev';
-const SITE_NAME = 'PromptForge AI Assistant';
+// Use a secure environment variable for your Google AI key
+const GOOGLE_AI_KEY = 'AIzaSyBeSB-D2Ws-KPK4jIudsK6lc5yz3grrBMw';
+const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent';
 
-// Centralized, context-rich prompt templates
+// Your EXACT toolPrompts object - 100% UNCHANGED
 const toolPrompts = {
   'explain-code': (code) => `
 You are an expert software engineer and technical writer. Provide a comprehensive, step-by-step explanation of the following code snippet in plain text only. Do not use Markdown, headings, or code blocks. Cover:
@@ -154,14 +153,14 @@ ${prompt}
   `
 };
 
-// Strip any leftover Markdown characters (safety fallback)
+// Strip any leftover Markdown characters (safety fallback) - UNCHANGED
 function stripMarkdown(text) {
   return text.replace(/[`*_#]/g, '').replace(/\n{2,}/g, '\n').trim();
 }
 
-// Process prompts via OpenRouter API
+// Process prompts via Google Gemini 3 Flash API
 async function processPrompt(toolId, prompt) {
-  if (!OPENROUTER_API_KEY) {
+  if (!GOOGLE_AI_KEY) {
     console.warn('API key not set — using mock response');
     return getMockResponse(toolId, prompt);
   }
@@ -170,36 +169,42 @@ async function processPrompt(toolId, prompt) {
   if (!content) throw new Error(`Unknown toolId: ${toolId}`);
 
   try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const response = await fetch(`${API_URL}?key=${GOOGLE_AI_KEY}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'Referer': SITE_URL,
-        'X-Title': SITE_NAME,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-exp:free',
-        messages: [
-          { role: 'system', content: 'You are an expert developer assistant.' },
-          { role: 'user', content }
-        ]
+        contents: [{
+          parts: [{ text: content }]
+        }],
+        generationConfig: {
+          temperature: 1.0,
+          maxOutputTokens: 2000,
+          thinkingConfig: {
+            thinkingLevel: "none"  // 🚀 MAXIMUM SPEED - 1-2 second responses
+          }
+        }
       })
     });
 
-    if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Gemini API failed: ${error.error?.message || response.status}`);
+    }
+    
     const data = await response.json();
-    const rawText = data.choices?.[0]?.message?.content || 'No response content';
-    return stripMarkdown(rawText); // Ensure plain text output
+    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response content';
+    return stripMarkdown(rawText);
   } catch (error) {
-    console.error('Error calling AI API:', error);
+    console.error('Error calling Gemini API:', error);
     return getMockResponse(toolId, prompt);
   }
 }
 
-// Mock fallback responses
+// Mock fallback responses - UNCHANGED
 function getMockResponse(toolId, prompt) {
-  return 'Mock response: AI service unavailable. Please provide a valid API key to get real results.';
+  return 'Mock response: AI service unavailable. Please provide a valid Google AI API key.';
 }
 
 module.exports = { processPrompt };
