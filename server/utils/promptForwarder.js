@@ -1,13 +1,12 @@
-// 🚀 Gemini 3 Prompt Forwarder with Plain-Text Responses - FULLY FIXED
+// Enhanced AI Prompt Forwarder with Plain-Text Responses
 const fetch = require('node-fetch');
 
-// Your working Google AI key - DIRECT, NO ENV NEEDED
-const GOOGLE_AI_KEY = 'AIzaSyBeSB-D2Ws-KPK4jIudsK6lc5yz3grrBMw';
+// Use a secure environment variable for your API key
+const OPENROUTER_API_KEY = process.env.OPENROUTER_KEY;
+const SITE_URL = process.env.SITE_URL || 'https://promptforge.dev';
+const SITE_NAME = 'PromptForge AI Assistant';
 
-// 🔴 CRITICAL FIX: Use v1alpha (v1beta returns 404)
-const API_URL = 'https://generativelanguage.googleapis.com/v1alpha/models/gemini-3-flash-preview:generateContent';
-
-// Your EXACT toolPrompts object - 100% UNCHANGED
+// Centralized, context-rich prompt templates
 const toolPrompts = {
   'explain-code': (code) => `
 You are an expert software engineer and technical writer. Provide a comprehensive, step-by-step explanation of the following code snippet in plain text only. Do not use Markdown, headings, or code blocks. Cover:
@@ -155,15 +154,14 @@ ${prompt}
   `
 };
 
-// Strip any leftover Markdown characters (safety fallback) - UNCHANGED
+// Strip any leftover Markdown characters (safety fallback)
 function stripMarkdown(text) {
   return text.replace(/[`*_#]/g, '').replace(/\n{2,}/g, '\n').trim();
 }
 
-// Process prompts via Google Gemini 3 Flash API - FULLY FIXED
+// Process prompts via OpenRouter API
 async function processPrompt(toolId, prompt) {
-  // Key is hardcoded and valid
-  if (!GOOGLE_AI_KEY) {
+  if (!OPENROUTER_API_KEY) {
     console.warn('API key not set — using mock response');
     return getMockResponse(toolId, prompt);
   }
@@ -172,78 +170,36 @@ async function processPrompt(toolId, prompt) {
   if (!content) throw new Error(`Unknown toolId: ${toolId}`);
 
   try {
-    console.log(`🚀 Sending request to Gemini 3 Flash (${toolId})...`);
-    
-    const response = await fetch(`${API_URL}?key=${GOOGLE_AI_KEY}`, {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Referer': SITE_URL,
+        'X-Title': SITE_NAME,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [{ text: content }]
-        }],
-        generationConfig: {
-          temperature: 1.0,
-          maxOutputTokens: 2000,
-          thinkingConfig: {
-            thinkingLevel: "none"  // 🚀 MAXIMUM SPEED - 1-2 second responses
-          }
-        }
+        model: 'deepseek/deepseek-r1-0528:free',
+        messages: [
+          { role: 'system', content: 'You are an expert developer assistant.' },
+          { role: 'user', content }
+        ]
       })
     });
 
-    // Handle non-200 responses
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ API Error Response:', errorText);
-      
-      let errorMessage = `HTTP ${response.status}`;
-      try {
-        const errorJson = JSON.parse(errorText);
-        errorMessage = errorJson.error?.message || errorMessage;
-      } catch (e) {
-        // Not JSON, use raw text
-      }
-      
-      throw new Error(`Gemini API failed: ${errorMessage}`);
-    }
-    
-    // Parse successful response
+    if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
     const data = await response.json();
-    
-    // Extract text from Gemini 3 response format
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    if (!rawText) {
-      console.error('❌ No text in response:', JSON.stringify(data, null, 2));
-      throw new Error('Empty response from Gemini API');
-    }
-    
-    console.log(`✅ Received response (${rawText.length} chars)`);
-    return stripMarkdown(rawText);
-    
+    const rawText = data.choices?.[0]?.message?.content || 'No response content';
+    return stripMarkdown(rawText); // Ensure plain text output
   } catch (error) {
-    console.error('❌ Error calling Gemini API:', error.message);
-    
-    // Specific error handling for common cases
-    if (error.message.includes('404')) {
-      return '❌ Error: Gemini 3 Flash model not found. The model name or API version may have changed.';
-    }
-    if (error.message.includes('429')) {
-      return '❌ Error: Rate limit exceeded. Please try again in a few seconds.';
-    }
-    if (error.message.includes('quota')) {
-      return '❌ Error: Free tier quota exceeded. Please try again later or switch to Gemini 1.5 Flash.';
-    }
-    
+    console.error('Error calling AI API:', error);
     return getMockResponse(toolId, prompt);
   }
 }
 
-// Mock fallback responses - UNCHANGED
+// Mock fallback responses
 function getMockResponse(toolId, prompt) {
-  return 'Mock response: AI service unavailable. Please check your API key or try again later.';
+  return 'Mock response: AI service unavailable. Please provide a valid API key to get real results.';
 }
 
 module.exports = { processPrompt };
